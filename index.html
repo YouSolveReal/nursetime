@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NurseTime" />
+  <meta name="theme-color" content="#1565C0" />
+  <title>NurseTime</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+
+  <!-- Ionic Framework (iOS mode) -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@8/dist/ionic/ionic.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@8/dist/ionic/ionic.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8/css/ionic.bundle.css" />
+
+  <!-- DSEG7 digital font -->
+  <style>
+    @font-face {
+      font-family: 'DSEG7';
+      src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2') format('woff2');
+      font-display: swap;
+    }
+  </style>
+
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<ion-app mode="ios">
+
+  <!-- ═══════════════════════════════════════════════════════
+       LOGIN SCREEN (overlays everything until auth)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-inner">
+      <div class="login-branding">
+        <div class="login-icon">🏥</div>
+        <h1 class="login-title">NurseTime</h1>
+        <p class="login-subtitle">Track your shifts. Get paid right.</p>
+      </div>
+
+      <div class="login-card">
+        <!-- Sign In / Sign Up Toggle -->
+        <div class="login-tabs">
+          <button class="login-tab-btn active" id="btn-show-login" onclick="showLoginForm()">Sign In</button>
+          <button class="login-tab-btn" id="btn-show-signup" onclick="showSignupForm()">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="auth-form">
+          <div class="form-field">
+            <label class="form-field-label">Email</label>
+            <input type="email" id="login-email" class="form-field-input"
+              placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-field">
+            <label class="form-field-label">Password</label>
+            <input type="password" id="login-password" class="form-field-input"
+              placeholder="Password" required autocomplete="current-password" />
+          </div>
+          <div id="login-error" class="auth-error d-none"></div>
+          <button type="submit" class="auth-submit-btn" id="btn-login">Sign In</button>
+          <button type="button" class="auth-link-btn" onclick="handleForgotPassword()">Forgot password?</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" onsubmit="handleSignup(event)" class="auth-form d-none">
+          <div class="form-field">
+            <label class="form-field-label">Email</label>
+            <input type="email" id="signup-email" class="form-field-input"
+              placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-field">
+            <label class="form-field-label">Password</label>
+            <input type="password" id="signup-password" class="form-field-input"
+              placeholder="Min. 6 characters" required autocomplete="new-password" minlength="6" />
+          </div>
+          <div class="form-field">
+            <label class="form-field-label">Confirm Password</label>
+            <input type="password" id="signup-confirm" class="form-field-input"
+              placeholder="Repeat password" required autocomplete="new-password" minlength="6" />
+          </div>
+          <div id="signup-error" class="auth-error d-none"></div>
+          <button type="submit" class="auth-submit-btn">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       APP SHELL (hidden until authenticated)
+       ion-menu + ion-page must be direct children of ion-app
+  ═══════════════════════════════════════════════════════ -->
+
+    <!-- ── Side Menu ──────────────────────────────────────── -->
+    <ion-menu content-id="appShell" menu-id="main-menu" side="start" type="overlay">
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-title>NurseTime</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <div class="menu-user-section">
+          <div class="menu-avatar">
+            <span id="menu-avatar-initials">N</span>
+          </div>
+          <div class="menu-user-info">
+            <div class="menu-user-name" id="sidebar-name">Nurse</div>
+            <div class="menu-user-email" id="sidebar-email"></div>
+          </div>
+        </div>
+
+        <ion-list lines="none" class="menu-list">
+          <ion-item button class="menu-item" onclick="exportMonthCSV()">
+            <ion-icon name="calendar-outline" slot="start" color="primary"></ion-icon>
+            <ion-label>Export Month CSV</ion-label>
+            <ion-icon name="chevron-forward-outline" slot="end" color="medium"></ion-icon>
+          </ion-item>
+          <ion-item button class="menu-item" onclick="exportWeekCSV()">
+            <ion-icon name="cash-outline" slot="start" color="primary"></ion-icon>
+            <ion-label>Export Week CSV</ion-label>
+            <ion-icon name="chevron-forward-outline" slot="end" color="medium"></ion-icon>
+          </ion-item>
+        </ion-list>
+
+        <div class="menu-footer">
+          <ion-button expand="block" color="danger" fill="outline" onclick="handleSignOut()">
+            <ion-icon name="log-out-outline" slot="start"></ion-icon>
+            Sign Out
+          </ion-button>
+
+          <div class="menu-about">
+            <div class="menu-about-title">About NurseTime</div>
+            <div class="menu-about-text">Shift tracking &amp; pay calculator for nurses.</div>
+            <div class="menu-about-dev">
+              <ion-icon name="code-slash-outline"></ion-icon>
+              Developed by <strong>Sanjog Shakya</strong>
+            </div>
+          </div>
+        </div>
+      </ion-content>
+    </ion-menu>
+
+    <!-- ── Main Page ──────────────────────────────────────── -->
+    <ion-page id="appShell" class="d-none">
+
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-buttons slot="start">
+            <ion-menu-button auto-hide="false" color="light"></ion-menu-button>
+          </ion-buttons>
+          <ion-title id="topbar-title">NurseTime</ion-title>
+          <ion-buttons slot="end">
+            <ion-button color="light" id="btn-account-menu" onclick="openMenu()">
+              <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content id="main-ion-content">
+
+        <!-- ┌── CLOCK TAB ──────────────────────────────────┐ -->
+        <section class="tab-panel active" id="panel-clock">
+
+          <!-- Notification permission banner (shown only if permission = default) -->
+          <div class="notif-banner d-none" id="notif-banner">
+            <ion-icon name="notifications-outline"></ion-icon>
+            <span>Enable notifications for break alerts</span>
+            <button class="notif-enable-btn" onclick="requestNotifPermission()">Enable</button>
+          </div>
+
+          <!-- Date + shift badge row -->
+          <div class="clk-header">
+            <div class="clk-date" id="clk-date">Loading…</div>
+            <span class="clk-shift-badge d-none" id="clk-shift-badge">Day Shift</span>
+          </div>
+
+          <!-- Large wall clock -->
+          <div class="clk-time-card">
+            <div class="clk-time-label">CURRENT TIME</div>
+            <div class="clk-time" id="clk-time">00:00</div>
+          </div>
+
+          <!-- Elapsed worked timer -->
+          <ion-card class="elapsed-card">
+            <ion-card-content>
+              <div class="elapsed-label" id="clk-elapsed-label">WORKED</div>
+              <div class="digital-display" id="clk-elapsed" data-ghost="88:88:88">00:00:00</div>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Clock In / Out button -->
+          <div class="clk-action-row">
+            <ion-button id="btn-clock-inout" expand="block" color="success" class="clock-main-btn" size="large">
+              CLOCK IN
+            </ion-button>
+          </div>
+
+          <!-- Break buttons (shown while clocked in) -->
+          <div class="d-none" id="clk-break-buttons">
+            <div class="break-section-label">START BREAK</div>
+            <div class="break-chips-row">
+              <ion-chip color="warning" id="btn-break-15" class="break-chip">
+                <ion-icon name="cafe-outline"></ion-icon>
+                <ion-label>15 min</ion-label>
+              </ion-chip>
+              <ion-chip color="warning" id="btn-break-30" class="break-chip">
+                <ion-icon name="restaurant-outline"></ion-icon>
+                <ion-label>30 min</ion-label>
+              </ion-chip>
+              <ion-chip color="warning" id="btn-break-60" class="break-chip">
+                <ion-icon name="pizza-outline"></ion-icon>
+                <ion-label>60 min</ion-label>
+              </ion-chip>
+            </div>
+          </div>
+
+          <!-- Break panel (shown while on break) -->
+          <ion-card class="break-panel d-none" id="clk-break-panel">
+            <ion-card-content>
+              <div class="break-panel-label">ON BREAK — TIME REMAINING</div>
+              <div class="digital-display digital-display--break" id="clk-break-countdown" data-ghost="88:88:88">00:00:00</div>
+              <div class="break-overrun d-none" id="clk-break-overrun">Break time is over!</div>
+              <ion-button expand="block" color="warning" fill="outline" class="end-break-btn" id="btn-end-break">
+                <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+                End Break
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+
+        </section>
+        <!-- └── END CLOCK TAB ─────────────────────────────┘ -->
+
+
+        <!-- ┌── CALENDAR TAB ────────────────────────────────┐ -->
+        <section class="tab-panel" id="panel-calendar">
+
+          <div class="cal-nav-row">
+            <ion-button fill="clear" id="btn-cal-prev" color="primary">
+              <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+            </ion-button>
+            <span class="cal-month-label" id="cal-month-label">Month Year</span>
+            <ion-button fill="clear" id="btn-cal-next" color="primary">
+              <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+            </ion-button>
+          </div>
+
+          <!-- Monthly earnings summary -->
+          <div class="cal-month-summary">
+            <div class="cal-month-stat">
+              <div class="cal-month-stat-value" id="cal-total-shifts">—</div>
+              <div class="cal-month-stat-label">Shifts</div>
+            </div>
+            <div class="cal-month-stat-divider"></div>
+            <div class="cal-month-stat">
+              <div class="cal-month-stat-value" id="cal-total-hours">—</div>
+              <div class="cal-month-stat-label">Hours</div>
+            </div>
+            <div class="cal-month-stat-divider"></div>
+            <div class="cal-month-stat">
+              <div class="cal-month-stat-value cal-month-earn" id="cal-total-earn">—</div>
+              <div class="cal-month-stat-label">Month Earnings</div>
+            </div>
+          </div>
+
+          <div class="cal-dow-headers">
+            <span>Mon</span><span>Tue</span><span>Wed</span>
+            <span>Thu</span><span>Fri</span>
+            <span class="weekend-hdr">Sat</span><span class="weekend-hdr">Sun</span>
+          </div>
+
+          <div class="cal-grid" id="cal-grid"></div>
+
+          <div class="cal-export-row">
+            <ion-button fill="outline" size="small" color="medium" id="btn-cal-export">
+              <ion-icon name="download-outline" slot="start"></ion-icon>
+              Export CSV
+            </ion-button>
+          </div>
+
+        </section>
+        <!-- └── END CALENDAR TAB ──────────────────────────┘ -->
+
+
+        <!-- ┌── PAY TAB ─────────────────────────────────────┐ -->
+        <section class="tab-panel" id="panel-pay">
+
+          <div class="pay-nav-row">
+            <ion-button fill="clear" id="btn-pay-prev" color="primary">
+              <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+            </ion-button>
+            <div class="pay-week-info">
+              <div class="pay-week-range" id="pay-week-range">—</div>
+              <ion-button fill="clear" size="small" color="medium" id="btn-pay-today">This Week</ion-button>
+            </div>
+            <ion-button fill="clear" id="btn-pay-next" color="primary">
+              <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+            </ion-button>
+          </div>
+
+          <!-- Weekly pay table -->
+          <ion-card class="pay-card">
+            <ion-card-header>
+              <ion-card-subtitle>Weekly Breakdown</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content class="pay-card-content">
+              <table class="pay-table">
+                <thead>
+                  <tr>
+                    <th>Shift</th>
+                    <th class="tc">#</th>
+                    <th class="tc">Hours</th>
+                    <th class="tc">Rate</th>
+                    <th class="tr">Pay</th>
+                  </tr>
+                </thead>
+                <tbody id="pay-table-body"></tbody>
+                <tfoot id="pay-table-foot"></tfoot>
+              </table>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- YTD card -->
+          <ion-card class="ytd-card">
+            <ion-card-header>
+              <ion-card-subtitle>Year to Date <span id="ytd-year"></span></ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              <div class="ytd-stats">
+                <div class="ytd-stat">
+                  <div class="ytd-stat-value" id="ytd-shifts">—</div>
+                  <div class="ytd-stat-label">Shifts</div>
+                </div>
+                <div class="ytd-stat">
+                  <div class="ytd-stat-value" id="ytd-hours">—</div>
+                  <div class="ytd-stat-label">Hours</div>
+                </div>
+                <div class="ytd-stat">
+                  <div class="ytd-stat-value ytd-pay-val" id="ytd-pay">—</div>
+                  <div class="ytd-stat-label">Gross Pay</div>
+                </div>
+              </div>
+            </ion-card-content>
+          </ion-card>
+
+          <div class="pay-export-row">
+            <ion-button fill="outline" size="small" color="medium" id="btn-pay-export">
+              <ion-icon name="download-outline" slot="start"></ion-icon>
+              Export Pay CSV
+            </ion-button>
+          </div>
+
+        </section>
+        <!-- └── END PAY TAB ──────────────────────────────────┘ -->
+
+
+        <!-- ┌── SETTINGS TAB ────────────────────────────────┐ -->
+        <section class="tab-panel" id="panel-settings">
+
+          <ion-list inset="true" class="settings-list">
+
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>Personal Info</ion-label>
+              </ion-item-divider>
+              <ion-item>
+                <ion-label position="stacked">Your Name</ion-label>
+                <input type="text" id="set-user-name" class="ion-native-input"
+                  placeholder="e.g. Sarah Johnson" autocomplete="name" />
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Employer / Hospital</ion-label>
+                <input type="text" id="set-employer" class="ion-native-input"
+                  placeholder="e.g. City General Hospital" autocomplete="organization" />
+              </ion-item>
+            </ion-item-group>
+
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>Hourly Rates ($/hr)</ion-label>
+              </ion-item-divider>
+              <ion-item>
+                <ion-label position="stacked">
+                  <span class="shift-dot" style="background:#1E88E5"></span>Day Shift
+                </ion-label>
+                <input type="number" id="set-rate-day" class="ion-native-input"
+                  value="40" min="0" step="0.5" inputmode="decimal" />
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">
+                  <span class="shift-dot" style="background:#FF8F00"></span>Evening Shift
+                </ion-label>
+                <input type="number" id="set-rate-evening" class="ion-native-input"
+                  value="44" min="0" step="0.5" inputmode="decimal" />
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">
+                  <span class="shift-dot" style="background:#6A1B9A"></span>Night Shift
+                </ion-label>
+                <input type="number" id="set-rate-night" class="ion-native-input"
+                  value="48" min="0" step="0.5" inputmode="decimal" />
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Weekend Differential (+$/hr)</ion-label>
+                <input type="number" id="set-rate-weekend" class="ion-native-input"
+                  value="6" min="0" step="0.5" inputmode="decimal" />
+              </ion-item>
+            </ion-item-group>
+
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>Shift Start Hours (24hr)</ion-label>
+              </ion-item-divider>
+              <ion-item>
+                <ion-label position="stacked">
+                  <span class="shift-dot" style="background:#1E88E5"></span>Day Shift Starts
+                </ion-label>
+                <input type="number" id="set-shift-day" class="ion-native-input"
+                  value="7" min="0" max="23" inputmode="numeric" />
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">
+                  <span class="shift-dot" style="background:#FF8F00"></span>Evening Shift Starts
+                </ion-label>
+                <input type="number" id="set-shift-evening" class="ion-native-input"
+                  value="15" min="0" max="23" inputmode="numeric" />
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">
+                  <span class="shift-dot" style="background:#6A1B9A"></span>Night Shift Starts
+                </ion-label>
+                <input type="number" id="set-shift-night" class="ion-native-input"
+                  value="23" min="0" max="23" inputmode="numeric" />
+              </ion-item>
+            </ion-item-group>
+
+          </ion-list>
+
+          <div class="settings-save-row">
+            <ion-button expand="block" id="btn-settings-save" color="primary">
+              <ion-icon name="save-outline" slot="start"></ion-icon>
+              Save Settings
+            </ion-button>
+          </div>
+
+        </section>
+        <!-- └── END SETTINGS TAB ─────────────────────────────┘ -->
+
+      </ion-content>
+
+      <!-- ── Bottom Navigation Bar ───────────────────────── -->
+      <nav class="bottom-nav" id="app-tab-bar">
+        <button class="bottom-nav-btn active" id="tab-clock" onclick="switchTab('clock')">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>Clock</span>
+        </button>
+        <button class="bottom-nav-btn" id="tab-calendar" onclick="switchTab('calendar')">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span>Calendar</span>
+        </button>
+        <button class="bottom-nav-btn" id="tab-pay" onclick="switchTab('pay')">
+          <ion-icon name="cash-outline"></ion-icon>
+          <span>Pay</span>
+        </button>
+        <button class="bottom-nav-btn" id="tab-settings" onclick="switchTab('settings')">
+          <ion-icon name="settings-outline"></ion-icon>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+    </ion-page>
+
+
+  <!-- ── Day Detail Modal ──────────────────────────────── -->
+  <ion-modal id="dayDetailModal">
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>Shift Details</ion-title>
+        <ion-buttons slot="end">
+          <ion-button onclick="document.getElementById('dayDetailModal').dismiss()" color="light">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div id="day-detail-body"></div>
+    </ion-content>
+    <ion-footer>
+      <ion-toolbar>
+        <ion-button expand="block" onclick="document.getElementById('dayDetailModal').dismiss()">
+          Done
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
+  </ion-modal>
+
+</ion-app>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════ -->
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
+
+<!-- App modules (order matters) -->
+<script src="js/firebase-config.js"></script>
+<script src="js/shift-utils.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/clock.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/pay.js"></script>
+<script src="js/settings.js"></script>
+
+<script>
+// ============================================================
+// APP CONTROLLER
+// ============================================================
+
+// ── Toast helper (Ionic) ──────────────────────────────────
+const AppToast = {
+  async show(msg, type = 'info') {
+    const colorMap = { success: 'success', danger: 'danger', warning: 'warning', info: 'primary' };
+    const toast = document.createElement('ion-toast');
+    toast.message = msg;
+    toast.duration = 3500;
+    toast.position = 'bottom';
+    toast.positionAnchor = 'app-tab-bar';
+    toast.color = colorMap[type] || 'primary';
+    toast.buttons = [{ icon: 'close', role: 'cancel' }];
+    document.body.appendChild(toast);
+    await toast.present();
+    toast.addEventListener('ionToastDidDismiss', () => toast.remove());
+  }
+};
+
+// ── Open menu helper ─────────────────────────────────────
+function openMenu() {
+  const menu = document.querySelector('ion-menu');
+  if (menu) menu.open();
+}
+
+// ── Tab switching ─────────────────────────────────────────
+let currentTab  = 'clock';
+const tabInited = {};
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+
+  const titles = { clock: 'NurseTime', calendar: 'Calendar', pay: 'Pay', settings: 'Settings' };
+  document.getElementById('topbar-title').textContent = titles[tab];
+
+  currentTab = tab;
+
+  if (!tabInited[tab]) {
+    tabInited[tab] = true;
+    if (tab === 'clock')    ClockTab.init();
+    if (tab === 'calendar') CalendarTab.init();
+    if (tab === 'pay')      PayTab.init();
+    if (tab === 'settings') SettingsTab.init();
+  } else {
+    if (tab === 'calendar') CalendarTab.init();
+    if (tab === 'pay')      PayTab.init();
+    if (tab === 'settings') SettingsTab.init();
+  }
+}
+
+// ── Login/Signup form toggling ─────────────────────────────
+function showLoginForm() {
+  document.getElementById('loginForm').classList.remove('d-none');
+  document.getElementById('signupForm').classList.add('d-none');
+  document.getElementById('btn-show-login').classList.add('active');
+  document.getElementById('btn-show-signup').classList.remove('active');
+}
+function showSignupForm() {
+  document.getElementById('signupForm').classList.remove('d-none');
+  document.getElementById('loginForm').classList.add('d-none');
+  document.getElementById('btn-show-signup').classList.add('active');
+  document.getElementById('btn-show-login').classList.remove('active');
+}
+
+// ── Auth handlers ─────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('d-none');
+  try {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    await Auth.signIn(email, password);
+  } catch (err) {
+    errEl.textContent = friendlyAuthError(err.code);
+    errEl.classList.remove('d-none');
+  }
+}
+
+async function handleSignup(e) {
+  e.preventDefault();
+  const errEl    = document.getElementById('signup-error');
+  errEl.classList.add('d-none');
+  const password = document.getElementById('signup-password').value;
+  const confirm  = document.getElementById('signup-confirm').value;
+  if (password !== confirm) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.classList.remove('d-none');
+    return;
+  }
+  try {
+    const email = document.getElementById('signup-email').value.trim();
+    await Auth.signUp(email, password);
+  } catch (err) {
+    errEl.textContent = friendlyAuthError(err.code);
+    errEl.classList.remove('d-none');
+  }
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { AppToast.show('Enter your email first.', 'warning'); return; }
+  try {
+    await Auth.sendPasswordReset(email);
+    AppToast.show('Password reset email sent!', 'success');
+  } catch (err) {
+    AppToast.show('Error: ' + err.message, 'danger');
+  }
+}
+
+async function handleSignOut() {
+  const menu = document.getElementById('main-menu');
+  if (menu) await menu.close();
+  await Auth.signOut();
+}
+
+function friendlyAuthError(code) {
+  const map = {
+    'auth/user-not-found':      'No account found with this email.',
+    'auth/wrong-password':      'Incorrect password.',
+    'auth/email-already-in-use':'An account with this email already exists.',
+    'auth/weak-password':       'Password must be at least 6 characters.',
+    'auth/invalid-email':       'Please enter a valid email address.',
+    'auth/too-many-requests':   'Too many attempts. Try again later.',
+    'auth/invalid-credential':  'Invalid email or password.'
+  };
+  return map[code] || 'Authentication error. Please try again.';
+}
+
+// ── Sidebar CSV shortcuts ─────────────────────────────────
+async function exportMonthCSV() {
+  const menu = document.getElementById('main-menu');
+  if (menu) await menu.close();
+  switchTab('calendar');
+  setTimeout(() => CalendarTab.init(), 100);
+}
+async function exportWeekCSV() {
+  const menu = document.getElementById('main-menu');
+  if (menu) await menu.close();
+  switchTab('pay');
+}
+
+// ── Sidebar user info ─────────────────────────────────────
+function updateSidebarUser() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const settings = window.appSettings || {};
+  const name = settings.userName || 'Nurse';
+  document.getElementById('sidebar-name').textContent  = name;
+  document.getElementById('sidebar-email').textContent = user.email || '';
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const avatarEl = document.getElementById('menu-avatar-initials');
+  if (avatarEl) avatarEl.textContent = initials || 'N';
+}
+
+// ── Auth state change ─────────────────────────────────────
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    try {
+      window.appSettings = await DB.getSettings();
+    } catch (e) {
+      window.appSettings = { ...ShiftUtils.DEFAULTS };
+    }
+    document.getElementById('loginScreen').classList.add('d-none');
+    document.getElementById('appShell').classList.remove('d-none');
+    updateSidebarUser();
+    checkNotifPermission();
+    if (!tabInited['clock']) {
+      tabInited['clock'] = true;
+      ClockTab.init();
+    }
+  } else {
+    document.getElementById('appShell').classList.add('d-none');
+    document.getElementById('loginScreen').classList.remove('d-none');
+    ClockTab.destroy();
+    Object.keys(tabInited).forEach(k => delete tabInited[k]);
+  }
+});
+
+// ── Push Notifications ────────────────────────────────────
+const VAPID_KEY = 'YOUR_VAPID_PUBLIC_KEY';
+
+let messaging = null;
+try { messaging = firebase.messaging(); } catch(e) {}
+
+function checkNotifPermission() {
+  if (!messaging) return;
+  if (Notification.permission === 'default') {
+    document.getElementById('notif-banner').classList.remove('d-none');
+  }
+}
+
+async function requestNotifPermission() {
+  document.getElementById('notif-banner').classList.add('d-none');
+  try {
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY });
+    if (token) {
+      console.log('FCM token:', token);
+      AppToast.show('Notifications enabled!', 'success');
+    }
+  } catch (err) {
+    if (err.code === 'messaging/permission-blocked') {
+      AppToast.show('Notifications blocked in browser settings.', 'warning');
+    } else {
+      AppToast.show('Could not enable notifications.', 'warning');
+      console.warn('FCM error:', err);
+    }
+  }
+}
+
+window.sendBreakEndNotification = function(workedSoFar) {
+  if (Notification.permission === 'granted') {
+    new Notification('NurseTime — Break Over!', {
+      body: `Time to get back to work. Worked so far: ${workedSoFar}`,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      tag: 'break-end',
+      renotify: true,
+      vibrate: [200, 100, 200]
+    });
+  }
+};
+
+// ── Service Worker ────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(err => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+</script>
+
+</body>
+</html>

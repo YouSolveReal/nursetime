@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!--
+  Open this file in a browser, then right-click each canvas and
+  "Save image as" → save as icon-192.png and icon-512.png in this folder.
+-->
+<html>
+<head><title>Generate Icons</title></head>
+<body>
+<p>Right-click each canvas → "Save image as" → save as the filename shown.</p>
+
+<h3>icon-192.png</h3>
+<canvas id="c192" width="192" height="192"></canvas>
+<script>
+(function() {
+  const c = document.getElementById('c192');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1565C0';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, 192, 192, 36);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 100px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏥', 96, 96);
+})();
+</script>
+
+<h3>icon-512.png</h3>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+(function() {
+  const c = document.getElementById('c512');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1565C0';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, 512, 512, 96);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 260px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏥', 256, 256);
+})();
+</script>
+</body>
+</html>
