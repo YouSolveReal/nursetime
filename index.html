@@ -18,6 +18,94 @@
   <!-- Canonical URL so the browser install prompt uses the right address -->
   <link rel="canonical" href="https://yousolvereal.github.io/nursetime/" />
 
+  <!-- ── PWA Icon Generator ──────────────────────────────────
+       Generates icons via Canvas at runtime so "Add to Home Screen"
+       always works even if PNG files don't exist on the server.
+       Runs synchronously before the rest of the page loads.
+  ──────────────────────────────────────────────────────── -->
+  <script>
+  (function () {
+    function makeIcon(size) {
+      const c   = document.createElement('canvas');
+      c.width   = size;
+      c.height  = size;
+      const ctx = c.getContext('2d');
+      const r   = size * 0.22;  // corner radius
+
+      // Rounded blue background
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.arcTo(size, 0,    size, size, r);
+      ctx.arcTo(size, size, 0,    size, r);
+      ctx.arcTo(0,    size, 0,    0,    r);
+      ctx.arcTo(0,    0,    size, 0,    r);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0,   '#1976D2');
+      grad.addColorStop(1,   '#0D47A1');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // White medical cross
+      const arm  = size * 0.13;
+      const long = size * 0.46;
+      const cx   = (size - arm)  / 2;
+      const cy   = (size - long) / 2;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.roundRect(cx, cy, arm, long, arm * 0.3); ctx.fill(); // vertical
+      ctx.beginPath(); ctx.roundRect(cy, cx, long, arm, arm * 0.3); ctx.fill(); // horizontal
+
+      // "NT" badge at bottom-right
+      const badge = size * 0.28;
+      const bx    = size - badge - size * 0.06;
+      const by    = size - badge - size * 0.06;
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.beginPath(); ctx.arc(bx + badge/2, by + badge/2, badge/2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle   = '#ffffff';
+      ctx.font        = `bold ${badge * 0.42}px -apple-system,sans-serif`;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('NT', bx + badge/2, by + badge/2);
+
+      return c.toDataURL('image/png');
+    }
+
+    // Generate both sizes
+    const url192 = makeIcon(192);
+    const url512 = makeIcon(512);
+
+    // Update all apple-touch-icon and shortcut icon links immediately
+    document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l => {
+      l.href = l.getAttribute('sizes') === '512x512' ? url512 : url192;
+    });
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) favicon.href = url192;
+
+    // Inject a new manifest blob so Chrome/Android uses the generated icons
+    // (must happen before the browser processes the original manifest)
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      fetch(manifestLink.href)
+        .then(r => r.json())
+        .then(data => {
+          // Replace icon entries with canvas-generated blob URLs
+          const toBlob = d => fetch(d).then(r => r.blob()).then(b => URL.createObjectURL(b));
+          Promise.all([toBlob(url192), toBlob(url512)]).then(([b192, b512]) => {
+            data.icons = [
+              { src: b192, sizes: '192x192', type: 'image/png', purpose: 'any'      },
+              { src: b192, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+              { src: b512, sizes: '512x512', type: 'image/png', purpose: 'any'      },
+              { src: b512, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+            ];
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/manifest+json' });
+            manifestLink.href = URL.createObjectURL(blob);
+          });
+        })
+        .catch(() => {}); // Silently ignore — offline / first load
+    }
+  })();
+  </script>
+
   <!-- Ionic Framework (iOS mode) -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@8/dist/ionic/ionic.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@8/dist/ionic/ionic.js"></script>
@@ -182,7 +270,7 @@
 
           <!-- Date + shift badge row -->
           <div class="clk-header">
-            <div class="clk-date" id="clk-date">Loading…</div>
+            <div class="clk-date" id="clk-date"></div>
             <span class="clk-shift-badge d-none" id="clk-shift-badge">Day Shift</span>
           </div>
 

@@ -34,17 +34,20 @@ const ClockTab = (() => {
     $('btn-break-60').addEventListener('click', () => startBreak(60));
     $('btn-end-break').addEventListener('click', endCurrentBreak);
 
-    // Restore active state from Firestore
+    // ── Start clock immediately — no Firebase wait ────────
+    // Time and date show instantly; shift state loads in background.
+    startClockTimer();
+
+    // ── Restore active shift state from Firestore (background) ─
     try {
       activeShift = await DB.getActiveShift();
       if (activeShift) {
         isClockedIn = true;
         activeBreak = await DB.getActiveBreak(activeShift.id);
         if (activeBreak) {
-          isOnBreak       = true;
+          isOnBreak        = true;
           breakEndNotified = false;
         }
-        // Load completed break total
         const completedMins = await DB.getTotalBreakMinutes(activeShift.id);
         completedBreakSeconds = completedMins * 60;
       }
@@ -52,7 +55,8 @@ const ClockTab = (() => {
       console.error('Clock init error:', e);
     }
 
-    startClockTimer();
+    // Update UI once Firebase state is known
+    updateButtonStates();
   }
 
   function destroy() {
