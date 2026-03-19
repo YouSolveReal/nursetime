@@ -2,7 +2,8 @@
   "name": "NurseTime",
   "short_name": "NurseTime",
   "description": "Shift tracking and pay calculator for nurses",
-  "start_url": "/",
+  "start_url": "/nursetime/",
+  "scope": "/nursetime/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1565C0",
@@ -12,13 +13,25 @@
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

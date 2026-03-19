@@ -1,25 +1,27 @@
 // ============================================================
 // SERVICE WORKER — NurseTime PWA
+// Hosted at: https://yousolvereal.github.io/nursetime/
 // Cache-first for static assets, network-first for Firebase.
 // ============================================================
 
-const CACHE_NAME = 'nursetime-v1';
+const CACHE_NAME  = 'nursetime-v2';
+const BASE        = '/nursetime';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/app.css',
-  '/js/firebase-config.js',
-  '/js/shift-utils.js',
-  '/js/db.js',
-  '/js/auth.js',
-  '/js/clock.js',
-  '/js/calendar.js',
-  '/js/pay.js',
-  '/js/settings.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  `${BASE}/`,
+  `${BASE}/index.html`,
+  `${BASE}/css/app.css`,
+  `${BASE}/js/firebase-config.js`,
+  `${BASE}/js/shift-utils.js`,
+  `${BASE}/js/db.js`,
+  `${BASE}/js/auth.js`,
+  `${BASE}/js/clock.js`,
+  `${BASE}/js/calendar.js`,
+  `${BASE}/js/pay.js`,
+  `${BASE}/js/settings.js`,
+  `${BASE}/manifest.json`,
+  `${BASE}/icons/icon-192.png`,
+  `${BASE}/icons/icon-512.png`
 ];
 
 // ── Install: pre-cache static assets ─────────────────────
@@ -56,7 +58,8 @@ self.addEventListener('fetch', event => {
     url.hostname.includes('identitytoolkit.googleapis.com') ||
     url.hostname.includes('securetoken.googleapis.com') ||
     url.hostname.includes('gstatic.com') ||
-    url.hostname.includes('jsdelivr.net')
+    url.hostname.includes('jsdelivr.net') ||
+    url.hostname.includes('firebase')
   ) {
     return; // default browser fetch
   }
@@ -74,7 +77,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // Offline fallback: serve index.html for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(`${BASE}/index.html`);
         }
       });
     })
