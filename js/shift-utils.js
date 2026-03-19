@@ -109,9 +109,14 @@ const ShiftUtils = (() => {
   }
 
   // ── Date/time helpers ─────────────────────────────────────
+  /** Safe 'yyyy-MM-dd' from a Date — avoids toLocaleDateString locale quirks on iOS */
+  function toYMD(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
   /** @returns {string}  'yyyy-MM-dd' */
   function todayStr() {
-    return new Date().toLocaleDateString('en-CA'); // en-CA gives yyyy-MM-dd
+    return toYMD(new Date());
   }
 
   /** @returns {string}  'HH:mm:ss' */
@@ -142,7 +147,7 @@ const ShiftUtils = (() => {
     const dow = d.getDay(); // 0=Sun
     const diff = (dow === 0) ? -6 : 1 - dow; // shift so Monday=0
     d.setDate(d.getDate() + diff);
-    return d.toLocaleDateString('en-CA');
+    return toYMD(d);
   }
 
   /**
@@ -153,7 +158,7 @@ const ShiftUtils = (() => {
   function getWeekEnd(weekStartStr) {
     const d = new Date(weekStartStr + 'T00:00:00');
     d.setDate(d.getDate() + 6);
-    return d.toLocaleDateString('en-CA');
+    return toYMD(d);
   }
 
   /**
@@ -178,7 +183,7 @@ const ShiftUtils = (() => {
   function addDays(dateStr, days) {
     const d = new Date(dateStr + 'T00:00:00');
     d.setDate(d.getDate() + days);
-    return d.toLocaleDateString('en-CA');
+    return toYMD(d);
   }
 
   // ── Elapsed time helpers ──────────────────────────────────
@@ -244,7 +249,7 @@ const ShiftUtils = (() => {
   /** 'yyyy-MM-dd' for the last day of a given month. */
   function monthEnd(year, month) {
     const last = new Date(year, month, 0); // day 0 = last day of previous month
-    return last.toLocaleDateString('en-CA');
+    return toYMD(last);
   }
 
   /** Parse 'yyyy-MM-dd' → { year, month, day } */

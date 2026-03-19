@@ -36,14 +36,30 @@ const CalendarTab = (() => {
     return parts[0] * 60 + (parts[1] || 0);
   }
 
-  // ── Recalculate a shift's worked minutes + pay if missing ─
+  // ── Normalise a stored date to 'yyyy-MM-dd' ───────────────
+  // Handles non-zero-padded dates that toLocaleDateString('en-CA') may produce
+  // on some iOS/macOS locales (e.g. '2026-3-5' → '2026-03-05').
+  function normalizeDate(d) {
+    if (!d) return d;
+    const parts = String(d).split('-');
+    if (parts.length !== 3) return d;
+    return `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+  }
+
+  // ── Recalculate a shift's worked minutes + pay ─────────────
+  // Always recompute from clockIn/clockOut timestamps when available so that
+  // stale, zero, or missing stored values are never shown in the calendar.
   function ensureComputed(sh) {
     const out = { ...sh };
-    if ((!out.totalMinutes || out.totalMinutes <= 0) && out.clockIn && out.clockOut) {
+    // Normalise the date field itself (fix any non-padded dates stored on device)
+    out.date = normalizeDate(out.date);
+
+    if (out.clockIn && out.clockOut) {
       let diff = timeToMins(out.clockOut) - timeToMins(out.clockIn);
       if (diff < 0) diff += 1440; // midnight crossing
-      out.totalMinutes = Math.max(0, diff - (out.breakMinutes || 0));
-      out.grossPay = ShiftUtils.calculatePay(out.shiftType, out.totalMinutes, out.date);
+      const mins = Math.max(0, diff - (out.breakMinutes || 0));
+      out.totalMinutes = mins;
+      out.grossPay = ShiftUtils.calculatePay(out.shiftType || 'Day', mins, out.date);
     }
     return out;
   }
@@ -61,7 +77,9 @@ const CalendarTab = (() => {
       const shifts = await DB.getShiftsForRange(start, end);
       dayDataMap = {};
       shifts.forEach(sh => {
-        dayDataMap[sh.date] = ensureComputed(sh);
+        const computed = ensureComputed(sh);
+        // Key by the normalised date so it matches the grid's zero-padded dateStr
+        dayDataMap[computed.date] = computed;
       });
     } catch (e) {
       console.error('Calendar load error:', e);
@@ -141,7 +159,9 @@ const CalendarTab = (() => {
         } else {
           d = new Date(currentYear, currentMonth - 1, firstCellOffset + 1);
         }
-        return d.toLocaleDateString('en-CA');
+        // Use explicit formatting — toLocaleDateString('en-CA') is unreliable on iOS
+        const y = d.getFullYear(), mo = d.getMonth()+1, dy = d.getDate();
+        return `${y}-${String(mo).padStart(2,'0')}-${String(dy).padStart(2,'0')}`;
       })();
       const weekEnd = ShiftUtils.addDays(weekStart, 6);
       grid.appendChild(buildWeekSummaryRow(weekStart, weekEnd));
@@ -190,7 +210,7 @@ const CalendarTab = (() => {
       }
     }
 
-    if (totalMins > 0) {
+    if (totalMins > 0 || totalPay > 0) {
       row.innerHTML = `
         <span class="cal-week-label">Week:</span>
         <span class="cal-week-hours">${ShiftUtils.formatDuration(totalMins)}</span>

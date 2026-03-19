@@ -4,8 +4,9 @@
 // Cache-first for static assets, network-first for Firebase.
 // ============================================================
 
-const CACHE_NAME  = 'nursetime-v2';
+const CACHE_NAME  = 'nursetime-v3';   // bumped — force old SW replacement
 const BASE        = '/nursetime';
+const ORIGIN      = 'https://yousolvereal.github.io';
 
 const STATIC_ASSETS = [
   `${BASE}/`,
@@ -51,6 +52,19 @@ self.addEventListener('activate', event => {
 // ── Fetch: serve from cache, fall back to network ─────────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // Redirect bare root navigation to /nursetime/ so iOS home screen icon
+  // works even if Safari saved the wrong URL (e.g. yousolvereal.github.io/).
+  if (
+    event.request.mode === 'navigate' &&
+    url.origin === ORIGIN &&
+    (url.pathname === '/' || url.pathname === '')
+  ) {
+    event.respondWith(
+      Response.redirect(`${ORIGIN}${BASE}/`, 302)
+    );
+    return;
+  }
 
   // Let Firebase / CDN requests go straight to network
   if (

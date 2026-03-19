@@ -28,17 +28,31 @@ const ClockTab = (() => {
     $('clk-elapsed').setAttribute('data-ghost', '88:88:88');
     $('clk-break-countdown').setAttribute('data-ghost', '88:88:88');
 
+    // Attach button listeners (wall clock is already running from DOMContentLoaded)
     $('btn-clock-inout').addEventListener('click', handleClockInOut);
     $('btn-break-15').addEventListener('click', () => startBreak(15));
     $('btn-break-30').addEventListener('click', () => startBreak(30));
     $('btn-break-60').addEventListener('click', () => startBreak(60));
     $('btn-end-break').addEventListener('click', endCurrentBreak);
 
-    // ── Start clock immediately — no Firebase wait ────────
-    // Time and date show instantly; shift state loads in background.
+    // Pull-to-refresh: re-sync Firebase shift state
+    const refresher = $('clk-refresher');
+    if (refresher) {
+      refresher.addEventListener('ionRefresh', async ev => {
+        await syncShiftState();
+        ev.target.complete();
+      });
+    }
+
+    // Start the shift elapsed/break countdown timer
     startClockTimer();
 
-    // ── Restore active shift state from Firestore (background) ─
+    // ── Load shift state from Firestore ─────────────────────
+    await syncShiftState();
+  }
+
+  // ── Sync shift state from Firestore ───────────────────────
+  async function syncShiftState() {
     try {
       activeShift = await DB.getActiveShift();
       if (activeShift) {
@@ -47,15 +61,23 @@ const ClockTab = (() => {
         if (activeBreak) {
           isOnBreak        = true;
           breakEndNotified = false;
+        } else {
+          isOnBreak   = false;
+          activeBreak = null;
         }
         const completedMins = await DB.getTotalBreakMinutes(activeShift.id);
         completedBreakSeconds = completedMins * 60;
+      } else {
+        isClockedIn           = false;
+        isOnBreak             = false;
+        activeShift           = null;
+        activeBreak           = null;
+        completedBreakSeconds = 0;
       }
     } catch (e) {
-      console.error('Clock init error:', e);
+      console.error('Clock sync error:', e);
     }
-
-    // Update UI once Firebase state is known
+    // Enable the button and show correct state
     updateButtonStates();
   }
 
@@ -140,8 +162,6 @@ const ClockTab = (() => {
     if (isOnBreak && activeBreak) {
       refreshBreakCountdown();
     }
-
-    updateButtonStates();
   }
 
   // ── Break countdown (called from refreshClock) ────────────

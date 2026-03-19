@@ -121,6 +121,21 @@
   </style>
 
   <link rel="stylesheet" href="css/app.css" />
+
+  <!-- ── Immediate wall clock — runs before auth resolves ── -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    function tickWallClock() {
+      var now = new Date();
+      var t = document.getElementById('clk-time');
+      var d = document.getElementById('clk-date');
+      if (t) t.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      if (d) d.textContent = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
+      setTimeout(tickWallClock, 1000 - (Date.now() % 1000));
+    }
+    tickWallClock();
+  });
+  </script>
 </head>
 <body>
 <ion-app mode="ios">
@@ -261,6 +276,11 @@
         <!-- ┌── CLOCK TAB ──────────────────────────────────┐ -->
         <section class="tab-panel active" id="panel-clock">
 
+          <!-- Pull-to-refresh -->
+          <ion-refresher id="clk-refresher" slot="fixed">
+            <ion-refresher-content pulling-text="Pull to refresh" refreshing-spinner="crescent"></ion-refresher-content>
+          </ion-refresher>
+
           <!-- Notification permission banner (shown only if permission = default) -->
           <div class="notif-banner d-none" id="notif-banner">
             <ion-icon name="notifications-outline"></ion-icon>
@@ -290,7 +310,7 @@
 
           <!-- Clock In / Out button -->
           <div class="clk-action-row">
-            <button id="btn-clock-inout" class="clock-main-btn clock-main-btn--in">CLOCK IN</button>
+            <button id="btn-clock-inout" class="clock-main-btn clock-main-btn--loading" disabled>Syncing…</button>
           </div>
 
           <!-- Break buttons (shown while clocked in) -->

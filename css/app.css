@@ -415,9 +415,18 @@ ion-content { --padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   -webkit-tap-highlight-color: transparent;
 }
 .clock-main-btn:active { opacity: .82; transform: scale(.98); }
-.clock-main-btn--in  { background: var(--ion-color-success); color: #fff; }
-.clock-main-btn--out { background: var(--ion-color-danger);  color: #fff; }
-.clock-main-btn:disabled { opacity: .45; }
+.clock-main-btn--in      { background: var(--ion-color-success); color: #fff; }
+.clock-main-btn--out     { background: var(--ion-color-danger);  color: #fff; }
+.clock-main-btn--loading {
+  background: var(--ion-color-medium, #92949c);
+  color: #fff;
+  animation: pulse-loading 1.2s ease-in-out infinite;
+}
+@keyframes pulse-loading {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .55; }
+}
+.clock-main-btn:disabled { cursor: not-allowed; }
 
 /* Break chips */
 .break-section-label {
