@@ -70,13 +70,21 @@ const ClockTab = (() => {
     breakEndNotified      = false;
   }
 
-  // ── Timer ─────────────────────────────────────────────────
+  // ── Timer (self-correcting setTimeout — avoids iOS drift) ─
   function startClockTimer() {
     stopClockTimer();
-    clockTimer = setInterval(refreshClock, 1000);
+    refreshClock();                          // fire immediately
+    function tick() {
+      const drift = Date.now() % 1000;       // ms past the second boundary
+      clockTimer = setTimeout(() => {
+        refreshClock();
+        tick();
+      }, 1000 - drift);
+    }
+    tick();
   }
   function stopClockTimer() {
-    if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+    if (clockTimer) { clearTimeout(clockTimer); clockTimer = null; }
   }
 
   // ── Main refresh (every 1 second) ─────────────────────────
@@ -180,13 +188,13 @@ const ClockTab = (() => {
 
     if (isClockedIn) {
       btn.textContent = 'CLOCK OUT';
-      btn.color       = 'danger';
+      btn.className   = 'clock-main-btn clock-main-btn--out';
       btn.disabled    = isOnBreak;
       $('clk-break-buttons')?.classList.toggle('d-none',  isOnBreak);
       $('clk-break-panel')?.classList.toggle('d-none', !isOnBreak);
     } else {
       btn.textContent = 'CLOCK IN';
-      btn.color       = 'success';
+      btn.className   = 'clock-main-btn clock-main-btn--in';
       btn.disabled    = false;
       $('clk-break-buttons')?.classList.add('d-none');
       $('clk-break-panel')?.classList.add('d-none');

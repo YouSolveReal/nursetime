@@ -290,27 +290,25 @@
 
           <!-- Clock In / Out button -->
           <div class="clk-action-row">
-            <ion-button id="btn-clock-inout" expand="block" color="success" class="clock-main-btn" size="large">
-              CLOCK IN
-            </ion-button>
+            <button id="btn-clock-inout" class="clock-main-btn clock-main-btn--in">CLOCK IN</button>
           </div>
 
           <!-- Break buttons (shown while clocked in) -->
           <div class="d-none" id="clk-break-buttons">
             <div class="break-section-label">START BREAK</div>
             <div class="break-chips-row">
-              <ion-chip color="warning" id="btn-break-15" class="break-chip">
+              <button id="btn-break-15" class="break-chip-btn">
                 <ion-icon name="cafe-outline"></ion-icon>
-                <ion-label>15 min</ion-label>
-              </ion-chip>
-              <ion-chip color="warning" id="btn-break-30" class="break-chip">
+                15 min
+              </button>
+              <button id="btn-break-30" class="break-chip-btn">
                 <ion-icon name="restaurant-outline"></ion-icon>
-                <ion-label>30 min</ion-label>
-              </ion-chip>
-              <ion-chip color="warning" id="btn-break-60" class="break-chip">
+                30 min
+              </button>
+              <button id="btn-break-60" class="break-chip-btn">
                 <ion-icon name="pizza-outline"></ion-icon>
-                <ion-label>60 min</ion-label>
-              </ion-chip>
+                60 min
+              </button>
             </div>
           </div>
 
@@ -320,10 +318,10 @@
               <div class="break-panel-label">ON BREAK — TIME REMAINING</div>
               <div class="digital-display digital-display--break" id="clk-break-countdown" data-ghost="88:88:88">00:00:00</div>
               <div class="break-overrun d-none" id="clk-break-overrun">Break time is over!</div>
-              <ion-button expand="block" color="warning" fill="outline" class="end-break-btn" id="btn-end-break">
-                <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+              <button class="end-break-btn" id="btn-end-break">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
                 End Break
-              </ion-button>
+              </button>
             </ion-card-content>
           </ion-card>
 
